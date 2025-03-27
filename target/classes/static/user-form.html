@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+    <link rel="stylesheet" href="styles.css">  <!-- ✅ Link to CSS -->
+</head>
+<body>
+<h2>User Registration Form</h2>
+
+<form id="userForm">
+    <label for="id">ID Number:</label>
+    <input type="text" id="id" name="id" pattern="[0-9]{13}" required>
+    <small>Must be exactly 13 digits</small>
+    <br>
+
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" pattern="[A-Za-z]+" required>
+    <small>Only letters allowed</small>
+    <br>
+
+    <label for="surname">Surname:</label>
+    <input type="text" id="surname" name="surname" pattern="[A-Za-z]+" required>
+    <small>Only letters allowed</small>
+    <br>
+
+    <label for="dob">Date of Birth:</label>
+    <input type="date" id="dob" name="dateOfBirth" required>
+    <small>Date must be in the past</small>
+    <br>
+
+    <!-- ✅ Buttons for "Register", "Reset", and "Cancel" -->
+    <button type="submit">Register</button>
+    <button type="button" id="resetButton">Reset</button>
+    <button type="button" id="cancelButton">Cancel</button>
+</form>
+
+<script>
+    document.getElementById("userForm").addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const formData = {
+            id: document.getElementById("id").value,
+            name: document.getElementById("name").value,
+            surname: document.getElementById("surname").value,
+            dateOfBirth: document.getElementById("dob").value
+        };
+
+        try {
+            const response = await fetch("http://localhost:8080/api/users", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) {
+                throw new Error("Id already exists");
+            }
+
+            const result = await response.json();
+            alert("User created successfully: " + JSON.stringify(result));
+
+            // ✅ Clear form after successful submission
+            document.getElementById("userForm").reset();
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Error submitting form: " + error.message);
+        }
+    });
+
+    // ✅ Reset button functionality (clears the form)
+    document.getElementById("resetButton").addEventListener("click", function() {
+        document.getElementById("userForm").reset();
+    });
+
+    // ✅ Cancel button functionality (closes the tab or exits)
+    document.getElementById("cancelButton").addEventListener("click", function() {
+        window.close(); // Tries to close the tab (may not work in some browsers)
+        window.location.href = "about:blank"; // Redirects to a blank page as a fallback
+    });
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Registration</title>
-    <link rel="stylesheet" href="styles.css">  <!-- ✅ Link to CSS -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <h2>User Registration Form</h2>
@@ -12,7 +12,8 @@
 <form id="userForm">
     <label for="id">ID Number:</label>
     <input type="text" id="id" name="id" pattern="[0-9]{13}" required>
-    <small>Must be exactly 13 digits</small>
+    <small>Must be exactly 13 digits (first 6 of the ID should match your birth date in YYMMDD format)</small>
+    <div id="idError" class="error"></div>
     <br>
 
     <label for="name">Name:</label>
@@ -30,21 +31,87 @@
     <small>Date must be in the past</small>
     <br>
 
-    <!-- ✅ Buttons for "Register", "Reset", and "Cancel" -->
+    <div id="validationResult" class="validation-result" style="display: none;"></div>
+
     <button type="submit">Register</button>
     <button type="button" id="resetButton">Reset</button>
     <button type="button" id="cancelButton">Cancel</button>
 </form>
 
 <script>
+    // Function to validate ID and DOB match
+    function validateIdDobMatch(id, dob) {
+        if (!id || !dob || id.length < 6) return false;
+
+        // Format date as YYMMDD
+        const date = new Date(dob);
+        const year = date.getFullYear().toString().slice(-2).padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+
+        const dobFormatted = year + month + day;
+        const idFirst6 = id.substring(0, 6);
+
+        return dobFormatted === idFirst6;
+    }
+
+
+    function updateValidationMessage(isValid) {
+        const validationDiv = document.getElementById('validationResult');
+        validationDiv.style.display = 'block';
+
+        if (isValid) {
+            validationDiv.className = 'validation-result match';
+            validationDiv.textContent = '✅ ID and Date of Birth match ';
+        } else {
+            validationDiv.className = 'validation-result mismatch';
+            validationDiv.textContent = '❌ ID and Date of Birth do not match' ;
+        }
+    }
+
+    // Event listeners for real-time validation
+    document.getElementById('id').addEventListener('input', checkIdDobMatch);
+    document.getElementById('dob').addEventListener('input', checkIdDobMatch);
+
+    function checkIdDobMatch() {
+        const id = document.getElementById('id').value;
+        const dob = document.getElementById('dob').value;
+
+        if (id.length >= 6 && dob) {
+            const isValid = validateIdDobMatch(id, dob);
+            updateValidationMessage(isValid);
+        } else {
+            document.getElementById('validationResult').style.display = 'none';
+        }
+    }
+
     document.getElementById("userForm").addEventListener("submit", async function(event) {
         event.preventDefault();
 
+        const id = document.getElementById("id").value;
+        const dob = document.getElementById("dob").value;
+        const idError = document.getElementById("idError");
+
+        // Validate ID length
+        if (id.length !== 13) {
+            idError.textContent = "ID must be exactly 13 digits";
+            return;
+        }
+
+        // Validate ID and DOB match
+        if (!validateIdDobMatch(id, dob)) {
+            idError.textContent = "First 6 digits of ID must match birth date (YYMMDD format)";
+            updateValidationMessage(false);
+            return;
+        } else {
+            idError.textContent = "";
+        }
+
         const formData = {
-            id: document.getElementById("id").value,
+            id: id,
             name: document.getElementById("name").value,
             surname: document.getElementById("surname").value,
-            dateOfBirth: document.getElementById("dob").value
+            dateOfBirth: dob
         };
 
         try {
@@ -57,29 +124,34 @@
             });
 
             if (!response.ok) {
-                throw new Error("Id already exists");
+                throw new Error("ID already exists");
             }
 
             const result = await response.json();
             alert("User created successfully: " + JSON.stringify(result));
 
-            // ✅ Clear form after successful submission
+            // Clear form after successful submission
             document.getElementById("userForm").reset();
+            document.getElementById('validationResult').style.display = 'none';
         } catch (error) {
             console.error("Error:", error);
             alert("Error submitting form: " + error.message);
         }
     });
 
-    // ✅ Reset button functionality (clears the form)
+    // Reset button functionality (clears the form)
     document.getElementById("resetButton").addEventListener("click", function() {
         document.getElementById("userForm").reset();
+        document.getElementById('validationResult').style.display = 'none';
+        document.getElementById('idError').textContent = '';
     });
 
-    // ✅ Cancel button functionality (closes the tab or exits)
+    // Cancel button functionality
     document.getElementById("cancelButton").addEventListener("click", function() {
-        window.close(); // Tries to close the tab (may not work in some browsers)
-        window.location.href = "about:blank"; // Redirects to a blank page as a fallback
+        if (confirm("Are you sure you want to cancel registration?")) {
+            window.close(); // Tries to close the tab
+            window.location.href = "about:blank"; // Fallback
+        }
     });
 </script>
 </body>
